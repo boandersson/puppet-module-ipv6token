@@ -1,7 +1,8 @@
 source ENV['GEM_SOURCE'] || "https://rubygems.org"
 
 group :test do
-  gem "rake"
+  gem 'safe_yaml', '~> 1.0.4'
+  gem 'rake', '< 11.0'
   gem "puppet", ENV['PUPPET_GEM_VERSION'] || '~> 3.8.0'
   gem "rspec", '< 3.2.0'
   gem "rspec-puppet"
@@ -21,17 +22,4 @@ group :test do
   gem 'puppet-lint-resource_reference_syntax'
 
   gem 'json_pure', '<= 2.0.1' if RUBY_VERSION < '2.0.0'
-end
-
-group :development do
-  gem "travis"              if RUBY_VERSION >= '2.1.0'
-  gem "travis-lint"         if RUBY_VERSION >= '2.1.0'
-  gem "puppet-blacksmith"
-  gem "guard-rake"          if RUBY_VERSION >= '2.2.5' # per dependency https://rubygems.org/gems/ruby_dep
-end
-
-group :system_tests do
-  gem "beaker"
-  gem "beaker-rspec"
-  gem "beaker-puppet_install_helper"
 end

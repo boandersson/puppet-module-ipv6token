@@ -1,11 +1,26 @@
 #!/bin/bash
 
-export PATH=/sbin:/usr/sbin:/bin:/usr/bin
-<%
+export PATH=/sbin:/usr/sbin
 
-def get_token_for_interface(interface) do
-  facts = [ "::custom_ipv6_token_#{interface}", "::default_ipv6_token_#{interface}"]
+script_status=0
+
+set_token() {
+    ip token set $1 dev $2
+    status=$?
+    if [ $script_status -eq 0 ]; then
+        script_status=$status
+    fi
+}
+
+<%
+def get_token_for_interface(interface)
+  if @exclude_interfaces.include?(interface)
+    return nil
+  end
+
   token = nil
+  facts = [ "::custom_ipv6_token_#{interface}", "::default_ipv6_token_#{interface}"]
+
   facts.each do |fact|
     if !scope.lookupvar(fact).to_s.empty?
       token = scope.lookupvar(fact)
@@ -27,14 +42,16 @@ interfaces.split(',').each do |interface|
 end
 
 tokens.keys.each do |interface| -%>
-ip token set <%= tokens[interface] %> dev <%= interface %>
+set_token <%= tokens[interface] %> <%= interface %>
 <%
 end
 
-if tokens.length == 0 do
-  -%>
-  # Error: puppet-module-ipv6token failed to calculate any ipv6 tokens.
-  # Interfaces found: <%= interfaces %>
-  <%
-end
-%>
+if tokens.length == 0
+  %>
+# Error: puppet-module-ipv6token failed to calculate any ipv6 tokens
+# (empty facts custom_ipv6_token_<if> and default_ipv6_token_<if>)
+# Interfaces found: <%= interfaces %>
+exit 1
+<% end -%>
+
+exit $script_status

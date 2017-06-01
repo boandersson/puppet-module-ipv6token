@@ -7,8 +7,8 @@ class ipv6token::params {
     'RedHat': {
       case $::operatingsystemmajrelease {
         '6': {
-          ifup_local_dir = '/etc/sysconfig/network-scripts/ifup-local.d'
-          token_script = 'set_ipv6_token.sh'
+          $ifup_local_dir = '/etc/sysconfig/network-scripts/ifup-local.d'
+          $token_script = 'set_ipv6_tokens.sh'
         }
         default: {
           fail("RedHat ${::operatingsystemmajrelease} not supported")
