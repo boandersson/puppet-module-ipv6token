@@ -16,7 +16,7 @@ class ipv6token::params {
       }
     }
     default: {
-      fail("${::operatingsystem} not supported")
+      fail("Operating system ${::operatingsystem} not supported")
     }
   }
 }
