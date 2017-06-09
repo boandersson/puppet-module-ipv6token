@@ -43,18 +43,22 @@ describe 'ipv6token' do
         default_facts.merge({ :default_ipv6_token_eth0   => '::0', })
       end
 
-      it { is_expected.to contain_file(token_script_dir).with(
+      it do
+        is_expected.to contain_file(token_script_dir).with(
           'ensure' => 'directory',
           'owner'  => 'root',
           'group'  => 'root',
           'mode'   => '0755',
-        )}
-      it { is_expected.to contain_file(default_token_script).with(
+        )
+      end
+      it do
+        is_expected.to contain_file(default_token_script).with(
           'ensure' => 'present',
           'owner'  => 'root',
           'group'  => 'root',
           'mode'   => '0744',
-        )}
+        )
+      end
     end
 
     context 'with ensure absent' do
@@ -168,6 +172,5 @@ describe 'ipv6token' do
         end
       end # var[:name].each
     end # validations.sort.each
-
   end
 end
