@@ -9,6 +9,7 @@ class ipv6token::params {
         '6': {
           $ifup_local_dir = '/etc/sysconfig/network-scripts/ifup-local.d'
           $token_script = 'set_ipv6_tokens.sh'
+          $ifup_local_script = '/sbin/ifup-local'
         }
         default: {
           fail("RedHat ${::operatingsystemmajrelease} not supported")

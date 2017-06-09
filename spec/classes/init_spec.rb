@@ -36,7 +36,7 @@ describe 'ipv6token' do
       :interfaces                => 'eth0,eth1,eth2,eth3',
     }
     token_script_dir = '/etc/sysconfig/network-scripts/ifup-local.d'
-    default_token_script = "#{token_script_dir}/10-set_ipv6_tokens.sh"
+    default_token_script = "#{token_script_dir}/10set_ipv6_tokens.sh"
 
     context 'token script' do
       let(:facts) do
@@ -61,6 +61,27 @@ describe 'ipv6token' do
       end
     end
 
+    context 'create ifup-local script' do
+      let(:facts) { default_facts }
+
+      it do
+        is_expected.to contain_file('/sbin/ifup-local').with(
+          'ensure'  => 'present',
+          'owner'   => 'root',
+          'group'   => 'root',
+          'mode'    => '0755',
+          'content' => 'puppet:///modules/ipv6token/ifup-local.rhel',
+        )
+      end
+    end
+
+    context 'without managing ifup-local script' do
+      let(:facts) { default_facts }
+      let(:params) { { :manage_ifup_local => false, } }
+
+      it { is_expected.not_to contain_file('/sbin/ifup-local') }
+    end
+
     context 'with ensure absent' do
       let(:facts) { default_facts }
       let(:params) { { :ensure => 'absent' } }
@@ -72,7 +93,7 @@ describe 'ipv6token' do
       let(:facts) { default_facts }
       let(:params) { { :token_script_index => '42' } }
 
-      it { is_expected.to contain_file("#{token_script_dir}/42-set_ipv6_tokens.sh").with('ensure' => 'present') }
+      it { is_expected.to contain_file("#{token_script_dir}/42set_ipv6_tokens.sh").with('ensure' => 'present') }
     end
 
     context 'mixing default- and custom token facts' do
@@ -100,6 +121,7 @@ describe 'ipv6token' do
       end
 
       it { is_expected.not_to contain_file(default_token_script) }
+      it { is_expected.not_to contain_file('/sbin/ifup-local') }
     end
 
     context 'with excluded interfaces' do
@@ -133,6 +155,12 @@ describe 'ipv6token' do
     end
 
     validations = {
+      'boolean' => {
+        :name    => %w(manage_ifup_local),
+        :valid   => [ true, false ],
+        :invalid => [{ 'ha' => 'sh' }, 42, 'true', [ 'array' ] ],
+        :message => 'not a boolean',
+      },
       'ensure' => {
         :name    => %w(ensure),
         :valid   => [ 'present', 'absent' ],
