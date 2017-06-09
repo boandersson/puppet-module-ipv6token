@@ -18,6 +18,10 @@ def get_token_for_interface(interface)
     return nil
   end
 
+  if @manage_main_if_only && interface != scope.lookupvar('::main_interface')
+    return nil
+  end
+
   token = nil
   facts = [ "::custom_ipv6_token_#{interface}", "::default_ipv6_token_#{interface}"]
 
@@ -47,11 +51,16 @@ set_token <%= tokens[interface] %> <%= interface %>
 end
 
 if tokens.length == 0
-  %>
-# Error: puppet-module-ipv6token failed to calculate any ipv6 tokens
-# (empty facts custom_ipv6_token_<if> and default_ipv6_token_<if>)
+%>
+# Info: puppet-module-ipv6token didn't find any interfaces to set ipv6 tokens for.
+#
 # Interfaces found: <%= interfaces %>
-exit 1
+# Excluded interfaces: <%= @exclude_interfaces %>
+# Manage main interface only: <%= @manage_main_if_only %>
+# Main interface: <%= scope.lookupvar('::main_interface') %>
+<%- interfaces.split(',').each do |interface| %>
+# default_ipv6_token_<%= interface %>: <%= scope.lookupvar("::default_ipv6_token_#{interface}") -%>
+<%- end %>
 <% end -%>
 
 exit $script_status

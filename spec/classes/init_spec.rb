@@ -5,7 +5,7 @@ describe 'ipv6token' do
     on_supported_os.each do |os, facts|
       context "on #{os}" do
         let(:facts) do
-          facts
+          facts.merge({ :main_interface => 'eth0' })
         end
 
         context "ipv6token class without any parameters" do
@@ -34,6 +34,7 @@ describe 'ipv6token' do
       :osfamily                  => 'RedHat',
       :operatingsystemmajrelease => '6',
       :interfaces                => 'eth0,eth1,eth2,eth3',
+      :main_interface            => 'eth0',
     }
     token_script_dir = '/etc/sysconfig/network-scripts/ifup-local.d'
     default_token_script = "#{token_script_dir}/10set_ipv6_tokens.sh"
@@ -97,12 +98,13 @@ describe 'ipv6token' do
     end
 
     context 'mixing default- and custom token facts' do
+      let(:params) { { :manage_main_if_only => false } }
       let(:facts) do
         default_facts.merge(
           {
-            :default_ipv6_token_eth0   => '::0',
-            :default_ipv6_token_eth1   => '::1',
-            :custom_ipv6_token_eth1    => '::2',
+            :default_ipv6_token_eth0   => '::10',
+            :default_ipv6_token_eth1   => '::11',
+            :custom_ipv6_token_eth1    => '::12',
           }
         )
       end
@@ -112,11 +114,56 @@ describe 'ipv6token' do
       it { is_expected.to contain_file(default_token_script).with_content(fixture) }
     end
 
+    context 'with manage main if only' do
+      let(:facts) do
+        default_facts.merge(
+          {
+            :default_ipv6_token_eth0   => '::10',
+            :default_ipv6_token_eth1   => '::11',
+          }
+        )
+      end
+
+      fixture = File.read(fixtures("ipv6_tokens_with_main_interface_only"))
+
+      it { is_expected.to contain_file(default_token_script).with_content(fixture) }
+    end
+
+    context 'with main if excluded' do
+      let(:facts) do
+        default_facts.merge(
+          {
+            :default_ipv6_token_eth0   => '::10',
+            :default_ipv6_token_eth1   => '::11',
+          }
+        )
+      end
+
+      let(:params) { { :exclude_interfaces  => [ 'eth0', 'eth2' ] } }
+
+      it { is_expected.to contain_file(default_token_script).with_content(/didn't find any interfaces to set ipv6 tokens for./) }
+    end
+
+    context 'with main interface not found' do
+      let(:facts) do
+        {
+          :osfamily                  => 'RedHat',
+          :operatingsystemmajrelease => '6',
+          :interfaces                => 'eth0',
+        }
+      end
+
+      it 'should fail' do
+        expect { should contain_class(subject) }.to raise_error(Puppet::Error, /missing main_interface fact./)
+      end
+    end
+
     context 'without any interfaces' do
       let(:facts) do
         {
           :osfamily                  => 'RedHat',
           :operatingsystemmajrelease => '6',
+          :main_interface            => 'eth0',
         }
       end
 
@@ -128,14 +175,20 @@ describe 'ipv6token' do
       let(:facts) do
         default_facts.merge(
           {
-            :default_ipv6_token_eth0   => '::0',
-            :default_ipv6_token_eth1   => '::1',
-            :default_ipv6_token_eth2   => '::2',
+            :default_ipv6_token_eth0   => '::10',
+            :default_ipv6_token_eth1   => '::11',
+            :default_ipv6_token_eth2   => '::12',
+            :default_ipv6_token_eth3   => '::13',
           }
         )
       end
 
-      let(:params) { { :exclude_interfaces => [ 'eth0', 'eth2' ] } }
+      let(:params) do
+        {
+          :manage_main_if_only => false,
+          :exclude_interfaces  => [ 'eth0', 'eth2' ],
+        }
+      end
 
       fixture = File.read(fixtures("ipv6_tokens_with_excluded_interfaces"))
 
@@ -151,12 +204,13 @@ describe 'ipv6token' do
         :osfamily                  => 'RedHat',
         :operatingsystemmajrelease => '6',
         :interfaces                => 'eth0',
+        :main_interface            => 'eth0',
       }
     end
 
     validations = {
       'boolean' => {
-        :name    => %w(manage_ifup_local),
+        :name    => %w(manage_ifup_local manage_main_if_only),
         :valid   => [ true, false ],
         :invalid => [{ 'ha' => 'sh' }, 42, 'true', [ 'array' ] ],
         :message => 'not a boolean',

@@ -1,21 +1,29 @@
 # Class: ipv6token
 # ===========================
 class ipv6token (
-  $ensure             = 'present',
-  $manage_ifup_local  = true,
-  $exclude_interfaces = [],
-  $token_script_index = '10',
+  $ensure              = 'present',
+  $manage_ifup_local   = true,
+  $manage_main_if_only = true,
+  $exclude_interfaces  = [],
+  $token_script_index  = '10',
 ) inherits ::ipv6token::params {
 
   validate_string($ensure)
   validate_array($exclude_interfaces)
   validate_string($token_script_index)
   validate_bool($manage_ifup_local)
+  validate_bool($manage_main_if_only)
 
   validate_re($token_script_index, '^([0-9][0-9])$',
       'token_script_index must match [0-9][0-9]')
   validate_re($ensure, '^(present|absent)$',
       "ensure must be 'present' or 'absent', got <${ensure}>")
+
+  if $manage_main_if_only {
+    if $::main_interface == undef or $::main_interface == '' {
+      fail('Unable to find main interface (missing main_interface fact)')
+    }
+  }
 
   $file = "${::ipv6token::ifup_local_dir}/${::ipv6token::token_script_index}${::ipv6token::token_script}"
 

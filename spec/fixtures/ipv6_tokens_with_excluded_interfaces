@@ -12,6 +12,7 @@ set_token() {
     fi
 }
 
-set_token ::1 eth1
+set_token ::11 eth1
+set_token ::13 eth3
 
 exit $script_status
