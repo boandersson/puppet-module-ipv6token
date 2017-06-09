@@ -41,7 +41,7 @@ describe 'ipv6token' do
 
     context 'token script' do
       let(:facts) do
-        default_facts.merge({ :default_ipv6_token_eth0   => '::0', })
+        default_facts.merge({ :default_ipv6_token_eth0   => '::10', })
       end
 
       it do
@@ -58,6 +58,13 @@ describe 'ipv6token' do
           'owner'  => 'root',
           'group'  => 'root',
           'mode'   => '0744',
+        )
+      end
+      it do
+        is_expected.to contain_exec('set_ipv6_token').with(
+          'command'     => "#{token_script_dir}/10set_ipv6_tokens.sh",
+          'refreshonly' => true,
+          'subscribe'   => "File[#{token_script_dir}/10set_ipv6_tokens.sh]",
         )
       end
     end
@@ -95,6 +102,13 @@ describe 'ipv6token' do
       let(:params) { { :token_script_index => '42' } }
 
       it { is_expected.to contain_file("#{token_script_dir}/42set_ipv6_tokens.sh").with('ensure' => 'present') }
+      it do
+        is_expected.to contain_exec('set_ipv6_token').with(
+          'command'     => "#{token_script_dir}/42set_ipv6_tokens.sh",
+          'refreshonly' => true,
+          'subscribe'   => "File[#{token_script_dir}/42set_ipv6_tokens.sh]",
+        )
+      end
     end
 
     context 'mixing default- and custom token facts' do

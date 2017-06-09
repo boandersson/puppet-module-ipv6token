@@ -50,6 +50,12 @@ class ipv6token (
       content => template('ipv6token/set_ipv6_token.erb'),
     }
 
+    exec { 'set_ipv6_token':
+      command     => $file,
+      refreshonly => true,
+      subscribe   => File[$file],
+    }
+
     if $manage_ifup_local {
       file { $::ipv6token::ifup_local_script:
         ensure  => present,
@@ -60,8 +66,4 @@ class ipv6token (
       }
     }
   }
-
-  # TODO: Ensure to run the ifup-script on changes!
-  # TODO: What about RHEL7?
-
 }
