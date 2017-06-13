@@ -16,11 +16,13 @@
 Facter.value(:interfaces).split(",").select { |r_if| r_if != 'lo' }.each do |raw_interface|
   # Make a fact for each interface found.
   interface = Facter::Util::IP.alphafy(raw_interface)
-  netmask = Facter::value("netmask_#{interface}".to_sym)
-  ipv4_address = Facter::value("ipaddress_#{interface}".to_sym)
 
   Facter.add('default_ipv6_token_' + interface) do
+    confine :kernel => 'Linux'
     setcode do
+      netmask = Facter::value("netmask_#{interface}".to_sym)
+      ipv4_address = Facter::value("ipaddress_#{interface}".to_sym)
+
       if netmask && ipv4_address
         begin
           cidr = IPAddr.new(netmask).to_i.to_s(2).count("1")

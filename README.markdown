@@ -1,60 +1,63 @@
-#### Table of Contents
-
-1. [Overview](#overview)
-2. [Module Description - What the module does and why it is useful](#module-description)
-3. [Setup - The basics of getting started with ipv6token](#setup)
-    * [What ipv6token affects](#what-ipv6token-affects)
-    * [Setup requirements](#setup-requirements)
-    * [Beginning with ipv6token](#beginning-with-ipv6token)
-4. [Usage - Configuration options and additional functionality](#usage)
-5. [Reference - An under-the-hood peek at what the module is doing and how](#reference)
-5. [Limitations - OS compatibility, etc.](#limitations)
-6. [Development - Guide for contributing to the module](#development)
-
 ## Overview
 
-A one-maybe-two sentence summary of what the module does/what problem it solves. This is your 30 second elevator pitch for your module. Consider including OS/Puppet version it works with.       
+Puppet module for configuring IPv6 tokenized interface identifiers
+
+## Compatibility
+
+This module is supported on RedHat 6 systems only.
 
 ## Module Description
 
-If applicable, this section should have a brief description of the technology the module integrates with and what that integration enables. This section should answer the questions: "What does this module *do*?" and "Why would I use it?"
+The token to use for each interface is provided by facts. The module will create a separate fact (`default_ipv6_token_<if>`) for each interface found on the system where each fact will contain the token to use for that specific interface.
+The default method will determine the token from the configured IPv4 address. For /24 and smaller networks, the token will be based on the last IPv4 octet.
+For /23 or larger networks, the last two IPv4 octets will be used.
 
-If your module has a range of functionality (installation, configuration, management, etc.) this is the time to mention it.
+Example:
 
-## Setup
+IPv4 on eth0 | default_ipv6_token_eth0
+-------------|------------------------
+192.168.50.50/23   | ::50:50
+192.168.0.1/24     | ::1
+192.168.100.100/25 | ::100
 
-### What ipv6token affects
+To override this behavior, install a custom fact called `custom_ipv6_token_<if>` providing the desired token to use.
 
-* A list of files, packages, services, or operations that the module will alter, impact, or execute on the system it's installed on.
-* This is a great place to stick any warnings.
-* Can be in list or paragraph form. 
+On RedHat 6, the module uses the `/sbin/ifup-local` hook for configuring IPv6 tokens directly with the ip command. `/sbin/ifup-local` is executed by the network service so the tokens will be automatically applied at boot or when restarting the network service.
+The script that performs the actual configuration will be installed in `/etc/sysconfig/network-scripts/ifup-local.d`. The `/sbin/ifup-local` script provided by this module will execute all scripts found in that directory.
 
-### Setup Requirements **OPTIONAL**
+See the RedHat documentation [configuring IPv6 tokenized interface identifiers](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/s2-Configuring_IPv6_Tokenized_Interface_Identifiers.html) for more details.
 
-If your module requires anything extra before setting up (pluginsync enabled, etc.), mention it here. 
+## Parameters
 
-### Beginning with ipv6token
+ensure
+------
+Valid values are present or absent. This parameter controls the presence of the ifup-local hooks. Note that once set, an IPv6 token cannot be removed, only changed.
 
-The very basic steps needed for a user to get the module up and running. 
+- *Default*: 'present'
 
-If your most recent release breaks compatibility or requires particular steps for upgrading, you may wish to include an additional section here: Upgrading (For an example, see http://forge.puppetlabs.com/puppetlabs/firewall).
+exclude_interfaces
+------------------
+An array containing interface names for which ipv6 tokens should not be configured.
+Any facts will still exist but no configuration will be written to the script in ifup-local.d.
 
-## Usage
+- *Default*: []
 
-Put the classes, types, and resources for customizing, configuring, and doing the fancy stuff with your module here. 
+manage_ifup_local
+-----------------
+Controls whether or not the module should control the main `/sbin/ifup-local` hook. The script in `/etc/sysconfig/network-scripts/ifup-local.d` will be installed regardless but this setting allows for controlling `/sbin/ifup-local` through other means.
 
-## Reference
+- *Default*: true
 
-Here, list the classes, types, providers, facts, etc contained in your module. This section should include all of the under-the-hood workings of your module so people know what the module is touching on their system but don't need to mess with things. (We are working on automating this section!)
+manage_main_if_only
+-------------------
+Specifies if tokens should be configured for all interfaces or only for the main interface. The main interface is determined to be the interface connected to the default gw. This is provided by the main_interface fact from the [juliengk-stdlibplus](https://github.com/juliengk/puppet-stdlibplus) module.
 
-## Limitations
+- *Default*: true
 
-This is where you list OS compatibility, version compatibility, etc.
+token_script_index_prefix
+-------------------------
+The index prefix of the script in `/etc/sysconfig/network-scripts/ifup-local.d` that determines the execution order in case multiple scripts exist in the directory.
+Note that changing this value will not remove any previously installed scripts.
+Valid values are [0-9][0-9].
 
-## Development
-
-Since your module is awesome, other users will want to play with it. Let them know what the ground rules for contributing are.
-
-## Release Notes/Contributors/Etc **Optional**
-
-If you aren't using changelog, put your release notes here (though you should consider using changelog). You may also add any additional sections you feel are necessary or important to include here. Please use the `## ` header. 
+- *Default*: '10'

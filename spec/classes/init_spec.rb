@@ -67,6 +67,15 @@ describe 'ipv6token' do
           'subscribe'   => "File[#{token_script_dir}/10set_ipv6_tokens.sh]",
         )
       end
+      it do
+        is_expected.to contain_file('/sbin/ifup-local').with(
+          'ensure' => 'present',
+          'owner'  => 'root',
+          'group'  => 'root',
+          'mode'   => '0755',
+          'source' => 'puppet:///modules/ipv6token/ifup-local.rhel',
+        )
+      end
     end
 
     context 'create ifup-local script' do
@@ -74,11 +83,11 @@ describe 'ipv6token' do
 
       it do
         is_expected.to contain_file('/sbin/ifup-local').with(
-          'ensure'  => 'present',
-          'owner'   => 'root',
-          'group'   => 'root',
-          'mode'    => '0755',
-          'content' => 'puppet:///modules/ipv6token/ifup-local.rhel',
+          'ensure' => 'present',
+          'owner'  => 'root',
+          'group'  => 'root',
+          'mode'   => '0755',
+          'source' => 'puppet:///modules/ipv6token/ifup-local.rhel',
         )
       end
     end
@@ -95,11 +104,12 @@ describe 'ipv6token' do
       let(:params) { { :ensure => 'absent' } }
 
       it { is_expected.to contain_file(default_token_script).with('ensure' => 'absent', ) }
+      it { is_expected.to contain_file('/sbin/ifup-local').with('ensure' => 'absent', ) }
     end
 
     context 'with custom script order' do
       let(:facts) { default_facts }
-      let(:params) { { :token_script_index => '42' } }
+      let(:params) { { :token_script_index_prefix => '42' } }
 
       it { is_expected.to contain_file("#{token_script_dir}/42set_ipv6_tokens.sh").with('ensure' => 'present') }
       it do
@@ -235,11 +245,11 @@ describe 'ipv6token' do
         :invalid => [{ 'ha' => 'sh' }, 42, true, 'string', [ 'array' ] ],
         :message => 'is not a string|must be .present. or .absent.'
       },
-      'token_script_index' => {
-        :name    => %w(token_script_index),
+      'token_script_index_prefix' => {
+        :name    => %w(token_script_index_prefix),
         :valid   => [ '00', '10', '99' ],
         :invalid => [{ 'ha' => 'sh' }, 42.2, 433, true, 'string', [ 'array' ] ],
-        :message => 'token_script_index must match|is not a string'
+        :message => 'token_script_index_prefix must match|is not a string'
       },
       'exclude_interfaces' => {
         :name    => %w(exclude_interfaces),
