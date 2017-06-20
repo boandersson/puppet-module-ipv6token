@@ -13,7 +13,7 @@
 # 192.168.0.100/24 => ::100
 # 192.168.10.100/23 => ::10:100
 #
-Facter.value(:interfaces).split(",").select { |r_if| r_if != 'lo' }.each do |raw_interface|
+Facter.value(:interfaces).split(",").reject { |r_if| r_if == 'lo' }.each do |raw_interface|
   # Make a fact for each interface found.
   interface = Facter::Util::IP.alphafy(raw_interface)
 

@@ -29,7 +29,7 @@ describe 'ipv6token' do
     end
   end
 
-  describe 'set ipv6 token' do
+  describe 'set token' do
     default_facts = {
       :osfamily                  => 'RedHat',
       :operatingsystemmajrelease => '6',

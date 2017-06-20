@@ -20,7 +20,7 @@ class ipv6token (
       "ensure must be 'present' or 'absent', got <${ensure}>")
 
   if $manage_main_if_only {
-    if $::main_interface == undef or $::main_interface == '' {
+    if !defined('$main_interface') or $::main_interface == '' {
       fail('Unable to find main interface (missing main_interface fact)')
     }
   }
@@ -34,7 +34,7 @@ class ipv6token (
     mode   => '0755',
   }
 
-  if $::interfaces != undef and $::interfaces != '' {
+  if defined('$interfaces') and $::interfaces != '' {
     file { $file:
       ensure  => $::ipv6token::ensure,
       owner   => 'root',

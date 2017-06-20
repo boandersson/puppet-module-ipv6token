@@ -2,6 +2,8 @@
 
 Puppet module for configuring IPv6 tokenized interface identifiers
 
+[![Build Status](https://travis-ci.org/boandersson/puppet-module-ipv6token.svg?branch=master)](https://travis-ci.org/boandersson/puppet-module-ipv6token)
+
 ## Compatibility
 
 This module is supported on RedHat 6 systems only.

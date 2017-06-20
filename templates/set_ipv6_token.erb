@@ -13,6 +13,14 @@ set_token() {
 }
 
 <%
+def lookupvar(name)
+  begin
+    scope.lookupvar(name)
+  rescue
+    nil
+  end
+end
+
 def get_token_for_interface(interface)
   if @exclude_interfaces.include?(interface)
     return nil
@@ -26,7 +34,7 @@ def get_token_for_interface(interface)
   facts = [ "::custom_ipv6_token_#{interface}", "::default_ipv6_token_#{interface}"]
 
   facts.each do |fact|
-    if !scope.lookupvar(fact).to_s.empty?
+    if !lookupvar(fact).to_s.empty?
       token = scope.lookupvar(fact)
       break
     end
@@ -57,9 +65,9 @@ if tokens.length == 0
 # Interfaces found: <%= interfaces %>
 # Excluded interfaces: <%= @exclude_interfaces %>
 # Manage main interface only: <%= @manage_main_if_only %>
-# Main interface: <%= scope.lookupvar('::main_interface') %>
+# Main interface: <%= lookupvar('::main_interface') %>
 <%- interfaces.split(',').each do |interface| %>
-# default_ipv6_token_<%= interface %>: <%= scope.lookupvar("::default_ipv6_token_#{interface}") -%>
+# default_ipv6_token_<%= interface %>: <%= lookupvar("::default_ipv6_token_#{interface}") -%>
 <%- end %>
 <% end -%>
 
