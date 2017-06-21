@@ -1,0 +1,18 @@
+#!/bin/bash
+
+export PATH=/sbin:/usr/sbin
+
+script_status=0
+
+set_token() {
+    ip token set $1 dev $2
+    status=$?
+    if [ $script_status -eq 0 ]; then
+        script_status=$status
+    fi
+}
+
+set_token ::10 eth0
+set_token ::12 eth1
+
+exit $script_status

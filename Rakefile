@@ -6,7 +6,7 @@ require 'puppet/version'
 require 'puppet-lint/tasks/puppet-lint'
 require 'puppet-syntax/tasks/puppet-syntax'
 require 'metadata-json-lint/rake_task'
-require 'rubocop/rake_task'
+require 'rubocop/rake_task' if RUBY_VERSION >= '2.0.0'
 
 if Puppet.version.to_f >= 4.9
     require 'semantic_puppet'
@@ -21,7 +21,15 @@ begin
 rescue LoadError # rubocop:disable Lint/HandleExceptions
 end
 
-RuboCop::RakeTask.new
+begin
+  RuboCop::RakeTask.new
+  task :rubocop_optional => :rubocop do
+  end
+rescue NameError
+  task :rubocop_optional do
+    puts "RuboCop not used for this Ruby version"
+  end
+end
 
 exclude_paths = [
   "bundle/**/*",
@@ -32,7 +40,7 @@ exclude_paths = [
 
 # Coverage from puppetlabs-spec-helper requires rcov which
 # doesn't work in anything since 1.8.7
-Rake::Task[:coverage].clear
+#Rake::Task[:coverage].clear
 
 Rake::Task[:lint].clear
 
@@ -63,6 +71,6 @@ task :test => [
   :metadata_lint,
   :syntax,
   :lint,
-  :rubocop,
+  :rubocop_optional,
   :spec,
 ]

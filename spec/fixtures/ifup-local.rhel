@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for file in /etc/sysconfig/network-scripts/ifup-local.d/[0-9][0-9]*; do
+    if [ -x $file ]; then
+        $file
+    fi
+done
