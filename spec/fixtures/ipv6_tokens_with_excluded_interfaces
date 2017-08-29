@@ -2,6 +2,13 @@
 
 export PATH=/sbin:/usr/sbin
 
+interface=$1
+action=$2
+
+if [ ! -z "$action" -a "$action" != "up" ]; then
+    exit 0
+fi
+
 script_status=0
 
 set_token() {
@@ -12,7 +19,7 @@ set_token() {
     fi
 }
 
-set_token ::11 eth1
-set_token ::13 eth3
+[ "$interface" == "eth1" -o "$interface" == "_all_" ] && set_token ::11 eth1
+[ "$interface" == "eth3" -o "$interface" == "_all_" ] && set_token ::13 eth3
 
 exit $script_status

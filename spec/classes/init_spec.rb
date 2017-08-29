@@ -29,7 +29,7 @@ describe 'ipv6token' do
     end
   end
 
-  describe 'set token' do
+  describe 'on RHEL6' do
     default_facts = {
       :osfamily                  => 'RedHat',
       :operatingsystemmajrelease => '6',
@@ -37,12 +37,18 @@ describe 'ipv6token' do
       :main_interface            => 'eth0',
     }
     token_script_dir = '/etc/sysconfig/network-scripts/ifup-local.d'
-    default_token_script = "#{token_script_dir}/10set_ipv6_tokens.sh"
+    default_token_script = "#{token_script_dir}/10set_ipv6_token"
 
-    context 'token script' do
+    context 'with config for multiple interfaces' do
       let(:facts) do
-        default_facts.merge({ :default_ipv6_token_eth0   => '::10', })
+        default_facts.merge(
+          {
+            :default_ipv6_token_eth0 => '::10',
+            :default_ipv6_token_eth1 => '::11',
+          })
       end
+
+      let(:params) { { :manage_main_if_only => false } }
 
       it do
         is_expected.to contain_file(token_script_dir).with(
@@ -52,30 +58,11 @@ describe 'ipv6token' do
           'mode'   => '0755',
         )
       end
-      it do
-        is_expected.to contain_file(default_token_script).with(
-          'ensure' => 'present',
-          'owner'  => 'root',
-          'group'  => 'root',
-          'mode'   => '0744',
-        )
-      end
-      it do
-        is_expected.to contain_exec('set_ipv6_token').with(
-          'command'     => "#{token_script_dir}/10set_ipv6_tokens.sh",
-          'refreshonly' => true,
-          'subscribe'   => "File[#{token_script_dir}/10set_ipv6_tokens.sh]",
-        )
-      end
-      it do
-        is_expected.to contain_file('/sbin/ifup-local').with(
-          'ensure' => 'present',
-          'owner'  => 'root',
-          'group'  => 'root',
-          'mode'   => '0755',
-          'source' => 'puppet:///modules/ipv6token/ifup-local.rhel',
-        )
-      end
+
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
     end
 
     context 'create ifup-local script' do
@@ -83,12 +70,13 @@ describe 'ipv6token' do
 
       it do
         is_expected.to contain_file('/sbin/ifup-local').with(
-          'ensure' => 'present',
-          'owner'  => 'root',
-          'group'  => 'root',
-          'mode'   => '0755',
-          'source' => 'puppet:///modules/ipv6token/ifup-local.rhel',
-        )
+          {
+            'ensure' => 'present',
+            'owner'  => 'root',
+            'group'  => 'root',
+            'mode'   => '0755',
+            'source' => 'puppet:///modules/ipv6token/ifup-local.rhel',
+          })
       end
     end
 
@@ -100,42 +88,24 @@ describe 'ipv6token' do
     end
 
     context 'with ensure absent' do
-      let(:facts) { default_facts }
-      let(:params) { { :ensure => 'absent' } }
-
-      it { is_expected.to contain_file(default_token_script).with('ensure' => 'absent', ) }
-      it { is_expected.to contain_file('/sbin/ifup-local').with('ensure' => 'absent', ) }
-    end
-
-    context 'with custom script order' do
-      let(:facts) { default_facts }
-      let(:params) { { :token_script_index_prefix => '42' } }
-
-      it { is_expected.to contain_file("#{token_script_dir}/42set_ipv6_tokens.sh").with('ensure' => 'present') }
-      it do
-        is_expected.to contain_exec('set_ipv6_token').with(
-          'command'     => "#{token_script_dir}/42set_ipv6_tokens.sh",
-          'refreshonly' => true,
-          'subscribe'   => "File[#{token_script_dir}/42set_ipv6_tokens.sh]",
-        )
-      end
-    end
-
-    context 'mixing default- and custom token facts' do
-      let(:params) { { :manage_main_if_only => false } }
       let(:facts) do
         default_facts.merge(
           {
-            :default_ipv6_token_eth0   => '::10',
-            :default_ipv6_token_eth1   => '::11',
-            :custom_ipv6_token_eth1    => '::12',
-          }
-        )
+            :default_ipv6_token_eth0 => '::10',
+            :default_ipv6_token_eth1 => '::11',
+          })
       end
 
-      fixture = File.read(fixtures("ipv6_tokens_for_all_interfaces"))
+      let(:params) do
+        {
+          :ensure              => 'absent',
+          :manage_main_if_only => false,
+        }
+      end
 
-      it { is_expected.to contain_file(default_token_script).with_content(fixture) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file('/sbin/ifup-local').with({ 'ensure' => 'absent' }) }
     end
 
     context 'with manage main if only' do
@@ -148,12 +118,30 @@ describe 'ipv6token' do
         )
       end
 
-      fixture = File.read(fixtures("ipv6_tokens_with_main_interface_only"))
+      let(:params) { { :manage_main_if_only => true, } }
 
-      it { is_expected.to contain_file(default_token_script).with_content(fixture) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'absent' }) }
     end
 
-    context 'with main if excluded' do
+    context 'with manage main if only and no main if found' do
+      let(:facts) do
+        {
+          :osfamily                  => 'RedHat',
+          :operatingsystemmajrelease => '6',
+          :interfaces                => 'eth0',
+          :default_ipv6_token_eth0   => '::10',
+        }
+      end
+
+      let(:params) { { :manage_main_if_only => true } }
+
+      it 'should fail' do
+        expect { should contain_class(subject) }.to raise_error(Puppet::Error, /missing main_interface fact./)
+      end
+    end
+
+    context 'with all interfaces excluded' do
       let(:facts) do
         default_facts.merge(
           {
@@ -165,21 +153,10 @@ describe 'ipv6token' do
 
       let(:params) { { :exclude_interfaces  => [ 'eth0', 'eth2' ] } }
 
-      it { is_expected.to contain_file(default_token_script).with_content(/didn't find any interfaces to set ipv6 tokens for./) }
-    end
-
-    context 'with main interface not found' do
-      let(:facts) do
-        {
-          :osfamily                  => 'RedHat',
-          :operatingsystemmajrelease => '6',
-          :interfaces                => 'eth0',
-        }
-      end
-
-      it 'should fail' do
-        expect { should contain_class(subject) }.to raise_error(Puppet::Error, /missing main_interface fact./)
-      end
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
     end
 
     context 'without any interfaces' do
@@ -191,7 +168,11 @@ describe 'ipv6token' do
         }
       end
 
-      it { is_expected.not_to contain_file(default_token_script) }
+      # TODO: How to match that defined type is not included?
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
       it { is_expected.not_to contain_file('/sbin/ifup-local') }
     end
 
@@ -203,8 +184,7 @@ describe 'ipv6token' do
             :default_ipv6_token_eth1   => '::11',
             :default_ipv6_token_eth2   => '::12',
             :default_ipv6_token_eth3   => '::13',
-          }
-        )
+          })
       end
 
       let(:params) do
@@ -214,9 +194,10 @@ describe 'ipv6token' do
         }
       end
 
-      fixture = File.read(fixtures("ipv6_tokens_with_excluded_interfaces"))
-
-      it { is_expected.to contain_file(default_token_script).with_content(fixture) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
     end
   end
 
@@ -238,18 +219,6 @@ describe 'ipv6token' do
         :valid   => [ true, false ],
         :invalid => [{ 'ha' => 'sh' }, 42, 'true', [ 'array' ] ],
         :message => 'not a boolean',
-      },
-      'ensure' => {
-        :name    => %w(ensure),
-        :valid   => [ 'present', 'absent' ],
-        :invalid => [{ 'ha' => 'sh' }, 42, true, 'string', [ 'array' ] ],
-        :message => 'is not a string|must be .present. or .absent.'
-      },
-      'token_script_index_prefix' => {
-        :name    => %w(token_script_index_prefix),
-        :valid   => [ '00', '10', '99' ],
-        :invalid => [{ 'ha' => 'sh' }, 42.2, 433, true, 'string', [ 'array' ] ],
-        :message => 'token_script_index_prefix must match|is not a string'
       },
       'exclude_interfaces' => {
         :name    => %w(exclude_interfaces),

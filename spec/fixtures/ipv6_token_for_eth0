@@ -2,4 +2,4 @@
 
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
-ip token set <%= @token_real %> dev <%= @interface %>
+ip token set ::10 dev eth0
