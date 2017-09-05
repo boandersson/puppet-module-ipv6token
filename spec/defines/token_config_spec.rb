@@ -7,6 +7,7 @@ describe 'ipv6token::token_config', :type => :define do
       :default_ipv6_token_eth1 => '::11',
       :default_ipv6_token_eth2 => '::12',
       :custom_ipv6_token_eth2  => '::13',
+      :osfamily                => 'RedHat',
     }
 
     default_params = {
@@ -34,11 +35,13 @@ describe 'ipv6token::token_config', :type => :define do
 
       it do
         is_expected.to contain_exec('set_ipv6_token-eth0').with(
-          'command'     => "/tmp/10set_ipv6_token-eth0.sh",
+          'command'     => "/tmp/10set_ipv6_token-eth0.sh eth0 up",
           'refreshonly' => true,
           'subscribe'   => "File[/tmp/10set_ipv6_token-eth0.sh]",
         )
       end
+
+      it { is_expected.not_to contain_file_line('wicked_postup_hook') }
     end
 
     context 'interface without token' do
@@ -55,6 +58,7 @@ describe 'ipv6token::token_config', :type => :define do
       let(:params) { default_params.merge({ :ensure => 'absent' }) }
 
       it { is_expected.to contain_file('/tmp/10set_ipv6_token-eth0.sh').with({ 'ensure' => 'absent' }) }
+      it { is_expected.not_to contain_exec('set_ipv6_token-eth0') }
     end
 
     context 'with ensure absent removes files even if token is missing' do
@@ -72,7 +76,7 @@ describe 'ipv6token::token_config', :type => :define do
       it { is_expected.to contain_file('/tmp/42set_ipv6_token-eth0.sh').with({ 'ensure' => 'present' }) }
       it do
         is_expected.to contain_exec('set_ipv6_token-eth0').with(
-          'command'     => "/tmp/42set_ipv6_token-eth0.sh",
+          'command'     => "/tmp/42set_ipv6_token-eth0.sh eth0 up",
           'refreshonly' => true,
           'subscribe'   => "File[/tmp/42set_ipv6_token-eth0.sh]",
           )
@@ -87,6 +91,66 @@ describe 'ipv6token::token_config', :type => :define do
       fixture = File.read(fixtures('ipv6_token_for_eth2'))
 
       it { is_expected.to contain_file('/tmp/10set_ipv6_token-eth2.sh').with_content(fixture) }
+    end
+  end
+
+  describe 'configure sles12' do
+    default_facts = {
+      :default_ipv6_token_eth0 => '::10',
+      :default_ipv6_token_eth1 => '::11',
+      :default_ipv6_token_eth2 => '::12',
+      :custom_ipv6_token_eth2  => '::13',
+      :osfamily                => 'Suse',
+      :operatingsystemrelease  => '12',
+    }
+
+    default_params = {
+      :ensure                      => 'present',
+      :script_dir                  => '/tmp',
+      :token_script_index_prefix   => '10',
+      :manage_wicked_postup => 'true',
+    }
+
+    context 'creates wicked post-up hook' do
+      let(:title) { 'eth0' }
+      let(:facts) { default_facts }
+      let(:params) { default_params }
+
+      it do
+        is_expected.to contain_file_line('wicked_postup_hook').with_only({
+          'ensure' => 'present',
+          'line'   => 'POST_UP_SCRIPT=\"wicked:set_ipv6_token-eth0.sh\"',
+          'match'  => '^POST_UP_SCRIPT='
+        })
+      end
+    end
+
+    context 'doesnt create wicked post-up hook when ensure absent' do
+      let(:title) { 'eth0' }
+      let(:facts) { default_facts }
+      let(:params) { default_params }
+
+      it do
+        is_expected.to contain_file_line('wicked_postup_hook-eth0').with_only({
+          'ensure'            => 'absent',
+          'line'              => "POST_UP_SCRIPT=\"wicked:set_ipv6_token-eth0.sh\"",
+          'match_for_absence' => 'true',
+        })
+      end
+    end
+
+    context 'doesnt create wicked post-up hook without manage_wicked_postup_script param' do
+      let(:title) { 'eth0' }
+      let(:facts) { default_facts }
+      let(:params) { default_params.merge({ 'manage_wicked_postup' => 'false' }) }
+
+      it do
+        is_expected.to contain_file_line('wicked_postup_hook-eth0').with_only({
+          'ensure'            => 'absent',
+          'line'              => "POST_UP_SCRIPT=\"wicked:set_ipv6_token-eth0.sh\"",
+          'match_for_absence' => 'true',
+        })
+      end
     end
   end
 

@@ -2,4 +2,11 @@
 
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
-ip token set ::13 dev eth2
+interface=$1
+action=$2
+
+[ -z "$action" ] && action="up"
+
+if [ "$interface" == "eth2" -a "$action" == "up" ]; then
+    ip token set ::13 dev eth2
+fi

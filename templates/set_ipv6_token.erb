@@ -2,4 +2,11 @@
 
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
-ip token set <%= @token_real %> dev <%= @interface %>
+interface=$1
+action=$2
+
+[ -z "$action" ] && action="up"
+
+if [ "$interface" == "<%= @interface %>" -a "$action" == "up" ]; then
+    ip token set <%= @token_real %> dev <%= @interface %>
+fi

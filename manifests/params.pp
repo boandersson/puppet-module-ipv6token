@@ -5,8 +5,6 @@
 class ipv6token::params {
   case $::osfamily {
     'RedHat': {
-      # $token_script = 'set_ipv6_tokens.sh'
-
       case $::operatingsystemmajrelease {
         '6': {
           $ifup_local_dir = '/etc/sysconfig/network-scripts/ifup-local.d'

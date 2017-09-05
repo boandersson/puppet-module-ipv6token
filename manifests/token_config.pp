@@ -9,6 +9,7 @@ define ipv6token::token_config(
   $ensure,
   $script_dir,
   $token_script_index_prefix,
+  $manage_wicked_postup = false,
 ) {
 
   validate_string($ensure)
@@ -47,9 +48,18 @@ define ipv6token::token_config(
     content => template('ipv6token/set_ipv6_token.erb'),
   }
 
-  exec { "set_ipv6_token-${interface}":
-    command     => $file,
-    refreshonly => true,
-    subscribe   => File[$file],
+  if $ensure_real == 'present' {
+    # Need to deal with ensure absent as well. Only remove exact match!
+    # Need to deal with manage_wicked_postup_script
+    file_line { "wicked_postup_hook-${interface}":
+      path  => "/etc/sysconfig/network/ifcfg-${interface}",
+      line  => "POST_UP_SCRIPT=wicked:${token_script_index_prefix}set_ipv6_token-${interface}.sh"
+    }
+
+    exec { "set_ipv6_token-${interface}":
+      command     => "${file} ${interface} up",
+      refreshonly => true,
+      subscribe   => File[$file],
+    }
   }
 }

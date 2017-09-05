@@ -201,6 +201,44 @@ describe 'ipv6token' do
     end
   end
 
+  describe 'on RHEL7' do
+    default_facts = {
+      :osfamily                  => 'RedHat',
+      :operatingsystemmajrelease => '7',
+      :interfaces                => 'eth0,eth1,eth2,eth3',
+      :main_interface            => 'eth0',
+    }
+    token_script_dir = '/etc/NetworkManager/dispatcher.d'
+    default_token_script = "#{token_script_dir}/10set_ipv6_token"
+
+    context 'with config for multiple interfaces' do
+      let(:facts) do
+        default_facts.merge(
+          {
+            :default_ipv6_token_eth0 => '::10',
+            :default_ipv6_token_eth1 => '::11',
+          })
+      end
+
+      let(:params) { { :manage_main_if_only => false } }
+
+      it do
+        is_expected.to contain_file(token_script_dir).with(
+          'ensure' => 'directory',
+          'owner'  => 'root',
+          'group'  => 'root',
+          'mode'   => '0755',
+        )
+      end
+
+      it { is_expected.not_to contain_file("/sbin/ifup-local") }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
+    end
+  end
+
   describe 'validations' do
     let(:validation_params) { { } }
 
