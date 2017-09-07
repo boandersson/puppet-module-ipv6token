@@ -9,11 +9,12 @@ define ipv6token::token_config(
   $ensure,
   $script_dir,
   $token_script_index_prefix,
-  $manage_wicked_postup = false,
+  $manage_wicked_postup_script = false,
 ) {
 
   validate_string($ensure)
   validate_string($token_script_index_prefix)
+  validate_bool($manage_wicked_postup_script)
   validate_re($token_script_index_prefix, '^([0-9][0-9])$',
       'token_script_index_prefix must match [0-9][0-9]')
   validate_re($ensure, '^(present|absent)$',
@@ -38,7 +39,12 @@ define ipv6token::token_config(
     $ensure_real = $ensure
   }
 
-  $file = "${script_dir}/${token_script_index_prefix}set_ipv6_token-${interface}.sh"
+  $token_script_index_prefix_real = $::osfamily ? {
+    'Suse'  => '',
+    default => $token_script_index_prefix,
+  }
+
+  $file = "${script_dir}/${token_script_index_prefix_real}set_ipv6_token-${interface}.sh"
 
   file { $file:
     ensure  => $ensure_real,
@@ -48,14 +54,17 @@ define ipv6token::token_config(
     content => template('ipv6token/set_ipv6_token.erb'),
   }
 
-  if $ensure_real == 'present' {
-    # Need to deal with ensure absent as well. Only remove exact match!
-    # Need to deal with manage_wicked_postup_script
+  if $::osfamily == 'Suse' and $manage_wicked_postup_script == true {
     file_line { "wicked_postup_hook-${interface}":
-      path  => "/etc/sysconfig/network/ifcfg-${interface}",
-      line  => "POST_UP_SCRIPT=wicked:${token_script_index_prefix}set_ipv6_token-${interface}.sh"
+      ensure            => $ensure_real,
+      path              => "/etc/sysconfig/network/ifcfg-${interface}",
+      line              => "POST_UP_SCRIPT=\"wicked:${token_script_index_prefix_real}set_ipv6_token-${interface}.sh\"",
+      match             => '^POST_UP_SCRIPT=',
+      match_for_absence => false,
     }
+  }
 
+  if $ensure_real == 'present' {
     exec { "set_ipv6_token-${interface}":
       command     => "${file} ${interface} up",
       refreshonly => true,

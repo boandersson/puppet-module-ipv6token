@@ -168,7 +168,6 @@ describe 'ipv6token' do
         }
       end
 
-      # TODO: How to match that defined type is not included?
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
@@ -198,6 +197,14 @@ describe 'ipv6token' do
       it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
+    end
+
+    context 'without config for other osreleases' do
+      let(:facts) { default_facts.merge({ :default_ipv6_token_eth0   => '::10' }) }
+
+      it { is_expected.not_to contain_file_line('wicked_postup_hook-eth0') }
+      it { is_expected.not_to contain_file('/etc/wicked/scripts') }
+      it { is_expected.not_to contain_file('/etc/NetworkManager/dispatcher.d') }
     end
   end
 
@@ -231,11 +238,64 @@ describe 'ipv6token' do
         )
       end
 
-      it { is_expected.not_to contain_file("/sbin/ifup-local") }
       it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
       it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
       it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
       it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
+    end
+
+    context 'without config for other osreleases' do
+      let(:facts) { default_facts }
+
+      it { is_expected.not_to contain_file_line('wicked_postup_hook-eth0') }
+      it { is_expected.not_to contain_file('/sbin/ifup-local') }
+      it { is_expected.not_to contain_file('/etc/wicked/scripts') }
+      it { is_expected.not_to contain_file('/etc/sysconfig/network-scripts/ifup-local.d') }
+    end
+  end
+
+  describe 'on SLES 12' do
+    default_facts = {
+      :osfamily               => 'Suse',
+      :operatingsystemrelease => '12',
+      :interfaces             => 'eth0,eth1,eth2,eth3',
+      :main_interface         => 'eth0',
+    }
+    token_script_dir = '/etc/wicked/scripts'
+    default_token_script = "#{token_script_dir}/10set_ipv6_token"
+
+    context 'with config for multiple interfaces' do
+      let(:facts) do
+        default_facts.merge(
+          {
+            :default_ipv6_token_eth0 => '::10',
+            :default_ipv6_token_eth1 => '::11',
+          })
+      end
+
+      let(:params) { { :manage_main_if_only => false } }
+
+      it do
+        is_expected.to contain_file('/etc/wicked/scripts').with(
+          'ensure' => 'directory',
+          'owner'  => 'root',
+          'group'  => 'root',
+          'mode'   => '0755',
+        )
+      end
+
+      it { is_expected.to contain_file("/etc/wicked/scripts/set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("/etc/wicked/scripts/set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("/etc/wicked/scripts/set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("/etc/wicked/scripts/set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
+    end
+
+    context 'without config for other osreleases' do
+      let(:facts) { default_facts }
+
+      it { is_expected.not_to contain_file('/sbin/ifup-local') }
+      it { is_expected.not_to contain_file('/etc/sysconfig/network-scripts/ifup-local.d') }
+      it { is_expected.not_to contain_file('/etc/NetworkManager/dispatcher.d') }
     end
   end
 

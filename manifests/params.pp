@@ -21,8 +21,8 @@ class ipv6token::params {
     'Suse': {
       # Suse doesn't support $::operatingsystemmajrelease.
       case $::operatingsystemrelease {
-        '/^12\.': {
-          # $token_script = 'set_ipv6_tokens.sh'
+        /^12/: {
+          $ifup_local_dir = '/etc/wicked/scripts'
         }
         default: {
           fail("SuSE ${::operatingsystemrelease} not supported")

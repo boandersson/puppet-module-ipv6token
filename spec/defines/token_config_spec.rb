@@ -97,9 +97,6 @@ describe 'ipv6token::token_config', :type => :define do
   describe 'configure sles12' do
     default_facts = {
       :default_ipv6_token_eth0 => '::10',
-      :default_ipv6_token_eth1 => '::11',
-      :default_ipv6_token_eth2 => '::12',
-      :custom_ipv6_token_eth2  => '::13',
       :osfamily                => 'Suse',
       :operatingsystemrelease  => '12',
     }
@@ -108,19 +105,21 @@ describe 'ipv6token::token_config', :type => :define do
       :ensure                      => 'present',
       :script_dir                  => '/tmp',
       :token_script_index_prefix   => '10',
-      :manage_wicked_postup => 'true',
+      :manage_wicked_postup_script => 'true',
     }
 
     context 'creates wicked post-up hook' do
       let(:title) { 'eth0' }
       let(:facts) { default_facts }
-      let(:params) { default_params }
+      let(:params) { default_params.merge({ :manage_wicked_postup_script => true }) }
 
       it do
-        is_expected.to contain_file_line('wicked_postup_hook').with_only({
-          'ensure' => 'present',
-          'line'   => 'POST_UP_SCRIPT=\"wicked:set_ipv6_token-eth0.sh\"',
-          'match'  => '^POST_UP_SCRIPT='
+        is_expected.to contain_file_line('wicked_postup_hook-eth0').only_with({
+          'ensure'            => 'present',
+          'path'              => '/etc/sysconfig/network/ifcfg-eth0',
+          'line'              => 'POST_UP_SCRIPT="wicked:set_ipv6_token-eth0.sh"',
+          'match'             => '^POST_UP_SCRIPT=',
+          'match_for_absence' => false,
         })
       end
     end
@@ -128,13 +127,22 @@ describe 'ipv6token::token_config', :type => :define do
     context 'doesnt create wicked post-up hook when ensure absent' do
       let(:title) { 'eth0' }
       let(:facts) { default_facts }
-      let(:params) { default_params }
+      let(:params) do
+        default_params.merge(
+          {
+            :ensure                      => 'absent',
+            :manage_wicked_postup_script => true
+          }
+        )
+      end
 
       it do
-        is_expected.to contain_file_line('wicked_postup_hook-eth0').with_only({
+        is_expected.to contain_file_line('wicked_postup_hook-eth0').only_with({
           'ensure'            => 'absent',
-          'line'              => "POST_UP_SCRIPT=\"wicked:set_ipv6_token-eth0.sh\"",
-          'match_for_absence' => 'true',
+          'path'              => '/etc/sysconfig/network/ifcfg-eth0',
+          'line'              => 'POST_UP_SCRIPT="wicked:set_ipv6_token-eth0.sh"',
+          'match'             => '^POST_UP_SCRIPT=',
+          'match_for_absence' => false,
         })
       end
     end
@@ -142,14 +150,23 @@ describe 'ipv6token::token_config', :type => :define do
     context 'doesnt create wicked post-up hook without manage_wicked_postup_script param' do
       let(:title) { 'eth0' }
       let(:facts) { default_facts }
-      let(:params) { default_params.merge({ 'manage_wicked_postup' => 'false' }) }
+      let(:params) { default_params.merge({ :manage_wicked_postup_script => false }) }
 
-      it do
-        is_expected.to contain_file_line('wicked_postup_hook-eth0').with_only({
-          'ensure'            => 'absent',
-          'line'              => "POST_UP_SCRIPT=\"wicked:set_ipv6_token-eth0.sh\"",
-          'match_for_absence' => 'true',
-        })
+      it { is_expected.not_to contain_file_line('wicked_postup_hook-eth0') }
+    end
+
+    [ '6', '7' ].each do |osrelease|
+      context 'doesnt create wicked post-up hook on RedHat #{osrelease}' do
+        let(:title) { 'eth0' }
+        let(:params) { default_params.merge({ :manage_wicked_postup_script => true }) }
+        let(:facts) do
+          default_facts.merge(
+            :osfamily                  => 'RedHat',
+            :operatingsystemmajrelease => osrelease,
+          )
+        end
+
+        it { is_expected.not_to contain_file_line('wicked_postup_hook-eth0') }
       end
     end
   end
@@ -191,6 +208,12 @@ describe 'ipv6token::token_config', :type => :define do
         :valid   => [ '/tmp' ],
         :invalid => [{ 'ha' => 'sh' }, 42, true, 'string' ],
         :message => 'is not an absolute path'
+      },
+      'manage_wicked_postup_script' => {
+        :name    => %w(manage_wicked_postup_script),
+        :valid   => [ true, false ],
+        :invalid => [{ 'ha' => 'sh' }, 42, [ 'array' ], 'string' ],
+        :message => 'is not a boolean'
       }
     }
 
@@ -214,5 +237,4 @@ describe 'ipv6token::token_config', :type => :define do
       end # var[:name].each
     end # validations.sort.each
   end
-
 end

@@ -1,11 +1,12 @@
 # Class: ipv6token
 # ===========================
 class ipv6token (
-  $ensure                    = 'present',
-  $manage_ifup_local         = true,
-  $manage_main_if_only       = true,
-  $exclude_interfaces        = [],
-  $token_script_index_prefix = '10',
+  $ensure                      = 'present',
+  $manage_ifup_local           = true,
+  #$manage_wicked_postup_script = false,
+  $manage_main_if_only         = true,
+  $exclude_interfaces          = [],
+  $token_script_index_prefix   = '10',
 ) inherits ::ipv6token::params {
 
   validate_array($exclude_interfaces)
@@ -19,23 +20,23 @@ class ipv6token (
   }
 
   if defined('$interfaces') and $::interfaces != '' {
+    if ($manage_main_if_only) {
+      $interfaces_real = [ $::main_interface ]
+    }
+    else {
+      #$interfaces_real = split($::interfaces, ',') - $exclude_interfaces
+      $interfaces_real = split($::interfaces, ',')
+    }
+
+    file { $::ipv6token::ifup_local_dir:
+      ensure => directory,
+      owner  => root,
+      group  => root,
+      mode   => '0755',
+    }
+
     case $::osfamily {
       'RedHat': {
-        if ($manage_main_if_only) {
-          $interfaces_real = [ $::main_interface ]
-        }
-        else {
-          #$interfaces_real = split($::interfaces, ',') - $exclude_interfaces
-          $interfaces_real = split($::interfaces, ',')
-        }
-
-        file { $::ipv6token::ifup_local_dir:
-          ensure => directory,
-          owner  => root,
-          group  => root,
-          mode   => '0755',
-        }
-
         token_config { $interfaces_real:
           ensure                    => $::ipv6token::ensure,
           script_dir                => $::ipv6token::ifup_local_dir,
@@ -54,13 +55,12 @@ class ipv6token (
         }
       }
       'Suse': {
-        # Install file - the file can only support a single interface.
-        #   Use a single script containing all the tokens
-        #   but rely on the interface arg passed from wicked, i.e. only set token
-        #   for the interface being configured from wicked
-        # Update ifcfg-<interface> - needs defined type to be able to Update
-        # files for all interfaces.
-        fail('not impl')
+        token_config { $interfaces_real:
+          ensure                    => $::ipv6token::ensure,
+          script_dir                => $::ipv6token::ifup_local_dir,
+          token_script_index_prefix => $::ipv6token::token_script_index_prefix,
+          require                   => File[$::ipv6token::ifup_local_dir]
+        }
       }
       default: {
         fail("Operating system ${::operatingsystem} not supported")

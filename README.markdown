@@ -54,6 +54,18 @@ It controls whether or not the module should control the main `/sbin/ifup-local`
 
 - *Default*: true
 
+manage_wicked_postup_script
+---------------------------
+This parameter is used on Suse 12 systems only.
+It controls whether or not the module should configure the
+POST_UP_SCRIPT section in the ifcfg-<interface> file for each
+interface with a token (see ifcfg(5)).
+Without this setting, IPv6 tokens will not be configured at boot
+or when restarting the network service.
+Note that if enabling this setting, any existing POST_UP_SCRIPT configuration will be overwritten. For this reason, it defaults to false.
+
+- *Default*: false
+
 manage_main_if_only
 -------------------
 Specifies if tokens should be configured for all interfaces or only for the main interface. The main interface is determined to be the interface connected to the default gw. This is provided by the main_interface fact from the [juliengk-stdlibplus](https://github.com/juliengk/puppet-stdlibplus) module.
