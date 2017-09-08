@@ -25,7 +25,7 @@ class ipv6token::params {
           $ifup_local_dir = '/etc/wicked/scripts'
         }
         default: {
-          fail("SuSE ${::operatingsystemrelease} not supported")
+          fail("Suse ${::operatingsystemrelease} not supported")
         }
       }
     }

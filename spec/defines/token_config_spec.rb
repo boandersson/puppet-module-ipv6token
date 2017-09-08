@@ -63,6 +63,7 @@ describe 'ipv6token::token_config', :type => :define do
 
     context 'with ensure absent removes files even if token is missing' do
       let(:title) { 'eth0' }
+      let(:facts) { { :osfamily => 'RedHat' } }
       let(:params) { default_params.merge({ :ensure => 'absent' }) }
 
       it { is_expected.to contain_file('/tmp/10set_ipv6_token-eth0.sh').with({ 'ensure' => 'absent' }) }
@@ -79,7 +80,7 @@ describe 'ipv6token::token_config', :type => :define do
           'command'     => "/tmp/42set_ipv6_token-eth0.sh eth0 up",
           'refreshonly' => true,
           'subscribe'   => "File[/tmp/42set_ipv6_token-eth0.sh]",
-          )
+        )
       end
     end
 

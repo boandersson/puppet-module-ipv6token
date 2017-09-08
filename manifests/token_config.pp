@@ -25,14 +25,14 @@ define ipv6token::token_config(
 
   $custom_token = getvar("::custom_ipv6_token_${interface}")
 
-  if !defined($custom_token) or $custom_token != '' {
+  if $custom_token != undef and $custom_token != '' {
     $token_real = $custom_token
   }
   else {
     $token_real = getvar("::default_ipv6_token_${interface}")
   }
 
-  if $token_real == '' {
+  if $token_real == undef or $token_real == '' {
     $ensure_real = 'absent'
   }
   else {

@@ -37,11 +37,11 @@ class ipv6token (
 
     case $::osfamily {
       'RedHat': {
-        token_config { $interfaces_real:
+        ipv6token::token_config { $interfaces_real:
           ensure                    => $::ipv6token::ensure,
           script_dir                => $::ipv6token::ifup_local_dir,
           token_script_index_prefix => $::ipv6token::token_script_index_prefix,
-          require                   => File[$::ipv6token::ifup_local_dir]
+          require                   => File[$::ipv6token::ifup_local_dir],
         }
 
         if $::operatingsystemmajrelease == '6' and $manage_ifup_local {
@@ -55,11 +55,11 @@ class ipv6token (
         }
       }
       'Suse': {
-        token_config { $interfaces_real:
+        ipv6token::token_config { $interfaces_real:
           ensure                    => $::ipv6token::ensure,
           script_dir                => $::ipv6token::ifup_local_dir,
           token_script_index_prefix => $::ipv6token::token_script_index_prefix,
-          require                   => File[$::ipv6token::ifup_local_dir]
+          require                   => File[$::ipv6token::ifup_local_dir],
         }
       }
       default: {

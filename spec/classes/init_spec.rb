@@ -37,7 +37,6 @@ describe 'ipv6token' do
       :main_interface            => 'eth0',
     }
     token_script_dir = '/etc/sysconfig/network-scripts/ifup-local.d'
-    default_token_script = "#{token_script_dir}/10set_ipv6_token"
 
     context 'with config for multiple interfaces' do
       let(:facts) do
@@ -45,7 +44,8 @@ describe 'ipv6token' do
           {
             :default_ipv6_token_eth0 => '::10',
             :default_ipv6_token_eth1 => '::11',
-          })
+          }
+        )
       end
 
       let(:params) { { :manage_main_if_only => false } }
@@ -76,7 +76,8 @@ describe 'ipv6token' do
             'group'  => 'root',
             'mode'   => '0755',
             'source' => 'puppet:///modules/ipv6token/ifup-local.rhel',
-          })
+          }
+        )
       end
     end
 
@@ -93,7 +94,8 @@ describe 'ipv6token' do
           {
             :default_ipv6_token_eth0 => '::10',
             :default_ipv6_token_eth1 => '::11',
-          })
+          }
+        )
       end
 
       let(:params) do
@@ -190,7 +192,8 @@ describe 'ipv6token' do
             :default_ipv6_token_eth1   => '::11',
             :default_ipv6_token_eth2   => '::12',
             :default_ipv6_token_eth3   => '::13',
-          })
+          }
+        )
       end
 
       let(:params) do
@@ -223,7 +226,6 @@ describe 'ipv6token' do
       :main_interface            => 'eth0',
     }
     token_script_dir = '/etc/NetworkManager/dispatcher.d'
-    default_token_script = "#{token_script_dir}/10set_ipv6_token"
 
     context 'with config for multiple interfaces' do
       let(:facts) do
@@ -231,7 +233,8 @@ describe 'ipv6token' do
           {
             :default_ipv6_token_eth0 => '::10',
             :default_ipv6_token_eth1 => '::11',
-          })
+          }
+        )
       end
 
       let(:params) { { :manage_main_if_only => false } }
@@ -268,8 +271,6 @@ describe 'ipv6token' do
       :interfaces             => 'eth0,eth1,eth2,eth3',
       :main_interface         => 'eth0',
     }
-    token_script_dir = '/etc/wicked/scripts'
-    default_token_script = "#{token_script_dir}/10set_ipv6_token"
 
     context 'with config for multiple interfaces' do
       let(:facts) do
@@ -277,7 +278,8 @@ describe 'ipv6token' do
           {
             :default_ipv6_token_eth0 => '::10',
             :default_ipv6_token_eth1 => '::11',
-          })
+          }
+        )
       end
 
       let(:params) { { :manage_main_if_only => false } }
