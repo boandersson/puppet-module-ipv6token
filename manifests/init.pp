@@ -24,8 +24,8 @@ class ipv6token (
       $interfaces_real = [ $::main_interface ]
     }
     else {
-      #$interfaces_real = split($::interfaces, ',') - $exclude_interfaces
-      $interfaces_real = split($::interfaces, ',')
+      # Use delete() instead of '-' as the latter requires future parser
+      $interfaces_real = delete(split($::interfaces, ','), $exclude_interfaces)
     }
 
     file { $::ipv6token::ifup_local_dir:

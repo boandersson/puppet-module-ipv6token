@@ -147,11 +147,18 @@ describe 'ipv6token' do
           {
             :default_ipv6_token_eth0   => '::10',
             :default_ipv6_token_eth1   => '::11',
+            :default_ipv6_token_eth2   => '::12',
+            :default_ipv6_token_eth3   => '::13',
           }
         )
       end
 
-      let(:params) { { :exclude_interfaces  => [ 'eth0', 'eth2' ] } }
+      let(:params) do
+        {
+          :exclude_interfaces  => [ 'eth0', 'eth1', 'eth2', 'eth3' ],
+          :manage_main_if_only => false,
+        }
+      end
 
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
@@ -193,10 +200,10 @@ describe 'ipv6token' do
         }
       end
 
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
       it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
       it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
+      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
     end
 
     context 'without config for other osreleases' do
