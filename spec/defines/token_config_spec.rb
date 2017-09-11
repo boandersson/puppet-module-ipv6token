@@ -30,7 +30,7 @@ describe 'ipv6token::token_config', :type => :define do
         )
       end
 
-      fixture = File.read(fixtures("ipv6_token_for_eth0"))
+      fixture = File.read(fixtures("ipv6_token_for_eth0-RedHat"))
       it { is_expected.to contain_file('/tmp/10set_ipv6_token-eth0.sh').with_content(fixture) }
 
       it do
@@ -89,7 +89,7 @@ describe 'ipv6token::token_config', :type => :define do
       let(:facts) { default_facts }
       let(:params) { default_params }
 
-      fixture = File.read(fixtures('ipv6_token_for_eth2'))
+      fixture = File.read(fixtures('ipv6_token_for_eth2-RedHat'))
 
       it { is_expected.to contain_file('/tmp/10set_ipv6_token-eth2.sh').with_content(fixture) }
     end
@@ -106,8 +106,25 @@ describe 'ipv6token::token_config', :type => :define do
       :ensure                      => 'present',
       :script_dir                  => '/tmp',
       :token_script_index_prefix   => '10',
-      :manage_wicked_postup_script => 'true',
+      :manage_wicked_postup_script => true,
     }
+
+    context 'creates and execs Suse-specific token script' do
+      let(:title) { 'eth0' }
+      let(:facts) { default_facts }
+      let(:params) { default_params }
+
+      fixture = File.read(fixtures('ipv6_token_for_eth0-Suse'))
+
+      it { is_expected.to contain_file('/tmp/set_ipv6_token-eth0.sh').with_content(fixture) }
+      it do
+        is_expected.to contain_exec('set_ipv6_token-eth0').with(
+          'command'     => "/tmp/set_ipv6_token-eth0.sh post-up eth0",
+          'refreshonly' => true,
+          'subscribe'   => "File[/tmp/set_ipv6_token-eth0.sh]",
+        )
+      end
+    end
 
     context 'creates wicked post-up hook' do
       let(:title) { 'eth0' }
@@ -154,6 +171,14 @@ describe 'ipv6token::token_config', :type => :define do
       let(:params) { default_params.merge({ :manage_wicked_postup_script => false }) }
 
       it { is_expected.not_to contain_file_line('wicked_postup_hook-eth0') }
+    end
+
+    context 'doesnt create wicked post-up or ifcfg hooks when token not found' do
+      let(:title) { 'eth1' }
+      let(:facts) { default_facts }
+      let(:params) { default_params }
+
+      it { is_expected.not_to contain_file_line('wicked_postup_hook-eth1') }
     end
 
     [ '6', '7' ].each do |osrelease|

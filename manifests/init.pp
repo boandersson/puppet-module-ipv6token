@@ -2,11 +2,11 @@
 # ===========================
 class ipv6token (
   $ensure                      = 'present',
-  $manage_ifup_local           = true,
-  #$manage_wicked_postup_script = false,
+  $manage_ifup_local           = false,
+  $manage_wicked_postup_script = false,
   $manage_main_if_only         = true,
   $exclude_interfaces          = [],
-  $token_script_index_prefix   = '10',
+  $token_script_index_prefix   = '90',
 ) inherits ::ipv6token::params {
 
   validate_array($exclude_interfaces)
@@ -56,10 +56,11 @@ class ipv6token (
       }
       'Suse': {
         ipv6token::token_config { $interfaces_real:
-          ensure                    => $::ipv6token::ensure,
-          script_dir                => $::ipv6token::ifup_local_dir,
-          token_script_index_prefix => $::ipv6token::token_script_index_prefix,
-          require                   => File[$::ipv6token::ifup_local_dir],
+          ensure                      => $::ipv6token::ensure,
+          script_dir                  => $::ipv6token::ifup_local_dir,
+          token_script_index_prefix   => $::ipv6token::token_script_index_prefix,
+          manage_wicked_postup_script => $::ipv6token::manage_wicked_postup_script,
+          require                     => File[$::ipv6token::ifup_local_dir],
         }
       }
       default: {

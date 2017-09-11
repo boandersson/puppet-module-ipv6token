@@ -59,14 +59,15 @@ describe 'ipv6token' do
         )
       end
 
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
     end
 
     context 'create ifup-local script' do
       let(:facts) { default_facts }
+      let(:params) { { :manage_ifup_local => true } }
 
       it do
         is_expected.to contain_file('/sbin/ifup-local').with(
@@ -83,7 +84,7 @@ describe 'ipv6token' do
 
     context 'without managing ifup-local script' do
       let(:facts) { default_facts }
-      let(:params) { { :manage_ifup_local => false, } }
+      let(:params) { { :manage_ifup_local => false } }
 
       it { is_expected.not_to contain_file('/sbin/ifup-local') }
     end
@@ -102,11 +103,12 @@ describe 'ipv6token' do
         {
           :ensure              => 'absent',
           :manage_main_if_only => false,
+          :manage_ifup_local   => true,
         }
       end
 
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'absent' }) }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth0.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth1.sh").with({ 'ensure' => 'absent' }) }
       it { is_expected.to contain_file('/sbin/ifup-local').with({ 'ensure' => 'absent' }) }
     end
 
@@ -122,8 +124,8 @@ describe 'ipv6token' do
 
       let(:params) { { :manage_main_if_only => true, } }
 
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth1.sh").with({ 'ensure' => 'absent' }) }
     end
 
     context 'with manage main if only and no main if found' do
@@ -162,10 +164,10 @@ describe 'ipv6token' do
         }
       end
 
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth0.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth1.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth2.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth3.sh") }
     end
 
     context 'without any interfaces' do
@@ -177,10 +179,10 @@ describe 'ipv6token' do
         }
       end
 
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth0.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth1.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth2.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth3.sh") }
       it { is_expected.not_to contain_file('/sbin/ifup-local') }
     end
 
@@ -203,10 +205,10 @@ describe 'ipv6token' do
         }
       end
 
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh") }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh") }
-      it { is_expected.not_to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh") }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth0.sh") }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth1.sh") }
+      it { is_expected.not_to contain_file("#{token_script_dir}/90set_ipv6_token-eth2.sh") }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth3.sh") }
     end
 
     context 'without config for other osreleases' do
@@ -248,10 +250,10 @@ describe 'ipv6token' do
         )
       end
 
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
-      it { is_expected.to contain_file("#{token_script_dir}/10set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth0.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
+      it { is_expected.to contain_file("#{token_script_dir}/90set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
     end
 
     context 'without config for other osreleases' do
@@ -264,7 +266,7 @@ describe 'ipv6token' do
     end
   end
 
-  describe 'on SLES 12' do
+  describe 'on Suse 12' do
     default_facts = {
       :osfamily               => 'Suse',
       :operatingsystemrelease => '12',
@@ -297,6 +299,32 @@ describe 'ipv6token' do
       it { is_expected.to contain_file("/etc/wicked/scripts/set_ipv6_token-eth1.sh").with({ 'ensure' => 'present' }) }
       it { is_expected.to contain_file("/etc/wicked/scripts/set_ipv6_token-eth2.sh").with({ 'ensure' => 'absent' }) }
       it { is_expected.to contain_file("/etc/wicked/scripts/set_ipv6_token-eth3.sh").with({ 'ensure' => 'absent' }) }
+    end
+
+    context 'with manage wicked post-up script' do
+      let(:facts) { default_facts.merge({ :default_ipv6_token_eth0 => '::10', } ) }
+      let(:params) { { :manage_wicked_postup_script => true } }
+
+      it { is_expected.to contain_file_line('wicked_postup_hook-eth0').with({ 'ensure' => 'present' }) }
+    end
+
+    context 'with manage wicked post-up script and ensure absent' do
+      let(:facts) { default_facts.merge({ :default_ipv6_token_eth0 => '::10', } ) }
+      let(:params) do
+        {
+          :ensure                      => 'absent',
+          :manage_wicked_postup_script => true
+        }
+      end
+
+      it { is_expected.to contain_file_line('wicked_postup_hook-eth0').with({ 'ensure' => 'absent' }) }
+    end
+
+    context 'without manage wicked post-up script' do
+      let(:facts) { default_facts }
+      let(:params) { { :manage_wicked_postup_script => false } }
+
+      it { is_expected.not_to contain_file_line('wicked_postup_hook-eth0') }
     end
 
     context 'without config for other osreleases' do

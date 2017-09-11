@@ -51,22 +51,29 @@ define ipv6token::token_config(
     owner   => 'root',
     group   => 'root',
     mode    => '0744',
-    content => template('ipv6token/set_ipv6_token.erb'),
+    content => template("ipv6token/set_ipv6_token-${::osfamily}.erb"),
   }
 
-  if $::osfamily == 'Suse' and $manage_wicked_postup_script == true {
-    file_line { "wicked_postup_hook-${interface}":
-      ensure            => $ensure_real,
-      path              => "/etc/sysconfig/network/ifcfg-${interface}",
-      line              => "POST_UP_SCRIPT=\"wicked:${token_script_index_prefix_real}set_ipv6_token-${interface}.sh\"",
-      match             => '^POST_UP_SCRIPT=',
-      match_for_absence => false,
+  if $token_real != undef and $token_real != '' {
+    if $::osfamily == 'Suse' and $manage_wicked_postup_script == true {
+      file_line { "wicked_postup_hook-${interface}":
+        ensure            => $ensure_real,
+        path              => "/etc/sysconfig/network/ifcfg-${interface}",
+        line              => "POST_UP_SCRIPT=\"wicked:${token_script_index_prefix_real}set_ipv6_token-${interface}.sh\"",
+        match             => '^POST_UP_SCRIPT=',
+        match_for_absence => false,
+      }
     }
   }
 
   if $ensure_real == 'present' {
+    $command = $::osfamily ? {
+      'Suse'  => "${file} post-up ${interface}",
+      default => "${file} ${interface} up",
+    }
+
     exec { "set_ipv6_token-${interface}":
-      command     => "${file} ${interface} up",
+      command     => $command,
       refreshonly => true,
       subscribe   => File[$file],
     }

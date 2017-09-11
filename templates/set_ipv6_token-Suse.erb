@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+action=$1
+interface=$2
+
+if [ "$interface" == "<%= @interface %>" -a "$action" == "post-up" ]; then
+    ip token set <%= @token_real %> dev <%= @interface %>
+fi
