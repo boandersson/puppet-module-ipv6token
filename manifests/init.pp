@@ -1,23 +1,17 @@
 # Class: ipv6token
 # ===========================
 class ipv6token (
-  $ensure                    = 'present',
-  $manage_ifup_local         = true,
-  $manage_main_if_only       = true,
-  $exclude_interfaces        = [],
-  $token_script_index_prefix = '10',
+  $ensure                      = 'present',
+  $manage_ifup_local           = false,
+  $manage_wicked_postup_script = false,
+  $manage_main_if_only         = true,
+  $exclude_interfaces          = [],
+  $token_script_index_prefix   = '90',
 ) inherits ::ipv6token::params {
 
-  validate_string($ensure)
   validate_array($exclude_interfaces)
-  validate_string($token_script_index_prefix)
   validate_bool($manage_ifup_local)
   validate_bool($manage_main_if_only)
-
-  validate_re($token_script_index_prefix, '^([0-9][0-9])$',
-      'token_script_index_prefix must match [0-9][0-9]')
-  validate_re($ensure, '^(present|absent)$',
-      "ensure must be 'present' or 'absent', got <${ensure}>")
 
   if $manage_main_if_only {
     if !defined('$main_interface') or $::main_interface == '' {
@@ -25,37 +19,52 @@ class ipv6token (
     }
   }
 
-  $file = "${::ipv6token::ifup_local_dir}/${::ipv6token::token_script_index_prefix}${::ipv6token::token_script}"
-
-  file { $::ipv6token::ifup_local_dir:
-    ensure => directory,
-    owner  => root,
-    group  => root,
-    mode   => '0755',
-  }
-
   if defined('$interfaces') and $::interfaces != '' {
-    file { $file:
-      ensure  => $::ipv6token::ensure,
-      owner   => 'root',
-      group   => 'root',
-      mode    => '0744',
-      content => template('ipv6token/set_ipv6_token.erb'),
+    if ($manage_main_if_only) {
+      $interfaces_real = [ $::main_interface ]
+    }
+    else {
+      # Use delete() instead of '-' as the latter requires future parser
+      $interfaces_real = delete(split($::interfaces, ','), $exclude_interfaces)
     }
 
-    exec { 'set_ipv6_token':
-      command     => $file,
-      refreshonly => true,
-      subscribe   => File[$file],
+    file { $::ipv6token::ifup_local_dir:
+      ensure => directory,
+      owner  => root,
+      group  => root,
+      mode   => '0755',
     }
 
-    if $manage_ifup_local {
-      file { $::ipv6token::ifup_local_script:
-        ensure => $::ipv6token::ensure,
-        owner  => root,
-        group  => 'root',
-        mode   => '0755',
-        source => 'puppet:///modules/ipv6token/ifup-local.rhel',
+    case $::osfamily {
+      'RedHat': {
+        ipv6token::token_config { $interfaces_real:
+          ensure                    => $::ipv6token::ensure,
+          script_dir                => $::ipv6token::ifup_local_dir,
+          token_script_index_prefix => $::ipv6token::token_script_index_prefix,
+          require                   => File[$::ipv6token::ifup_local_dir],
+        }
+
+        if $::operatingsystemmajrelease == '6' and $manage_ifup_local {
+          file { $::ipv6token::ifup_local_script:
+            ensure => $::ipv6token::ensure,
+            owner  => root,
+            group  => 'root',
+            mode   => '0755',
+            source => 'puppet:///modules/ipv6token/ifup-local.rhel',
+          }
+        }
+      }
+      'Suse': {
+        ipv6token::token_config { $interfaces_real:
+          ensure                      => $::ipv6token::ensure,
+          script_dir                  => $::ipv6token::ifup_local_dir,
+          token_script_index_prefix   => $::ipv6token::token_script_index_prefix,
+          manage_wicked_postup_script => $::ipv6token::manage_wicked_postup_script,
+          require                     => File[$::ipv6token::ifup_local_dir],
+        }
+      }
+      default: {
+        fail("Operating system ${::operatingsystem} not supported")
       }
     }
   }

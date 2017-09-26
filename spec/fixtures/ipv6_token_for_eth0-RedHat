@@ -1,0 +1,25 @@
+#!/bin/bash
+
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+interface=$1
+action=$2
+
+[ -z "$action" ] && action="up"
+
+if [ "$interface" == "eth0" -a "$action" == "up" ]; then
+    (
+    # Ugly hack since the token might not be set properly
+    # during boot otherwise.
+    sleep 20
+    attempts=5
+    while [ $attempts -gt 0 ]; do
+        ip token set ::10 dev eth0
+        if [ $? -eq 0 ]; then
+            break
+        fi
+        attempts=$(( --attempts ))
+        sleep 2
+    done
+    ) &
+fi

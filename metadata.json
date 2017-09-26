@@ -1,6 +1,6 @@
 {
-  "name": "puppet-module-ipv6token",
-  "version": "0.1.0",
+  "name": "band-ipv6token",
+  "version": "1.0.0",
   "author": "Bosse Andersson",
   "summary": "",
   "license": "Apache-2.0",
@@ -21,7 +21,13 @@
     {
       "operatingsystem": "RedHat",
       "operatingsystemrelease": [
-        "6"
+        "6", "7"
+      ]
+    },
+    {
+      "operatingsystem": "Suse",
+      "operatingsystemrelease": [
+        "12"
       ]
     }
   ]

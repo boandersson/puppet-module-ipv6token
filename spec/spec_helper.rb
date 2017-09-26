@@ -1,6 +1,7 @@
 require 'puppetlabs_spec_helper/module_spec_helper'
 require 'rspec-puppet-facts'
 
+
 include RspecPuppetFacts
 
 require 'simplecov'
@@ -13,6 +14,11 @@ SimpleCov.start do
     SimpleCov::Formatter::HTMLFormatter,
     SimpleCov::Formatter::Console
   ])
+end
+
+if ENV['DEBUG']
+  Puppet::Util::Log.level = :debug
+  Puppet::Util::Log.newdestination(:console)
 end
 
 RSpec.configure do |c|
