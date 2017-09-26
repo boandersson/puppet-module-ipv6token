@@ -1,2 +1,9 @@
+2017-09-26 Release 1.0.0
+- Add support for SuSE 12 and RHEL 7
+- Change token script handling to install one script per interface
+  This is incompatible with token scripts installed by the previous version.
+- Change defaults for parameters manage_ifup_local to false and 
+  token_script_index_prefix to 90
+
 2017-06-21 Release 0.1.0
 - Initial impl

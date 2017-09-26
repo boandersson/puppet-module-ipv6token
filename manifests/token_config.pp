@@ -1,7 +1,6 @@
 # == Class ipv6token::token_config
 #
 # Defined type for configuring ipv6 tokens per interface.
-# This class supports SLES 12 and RHEL 7
 #
 # The title specifies the interface to configure
 #
